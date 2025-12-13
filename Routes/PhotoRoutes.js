@@ -8,6 +8,7 @@ const {
   getPhotoById,
   updatePhoto,
   deletePhoto,
+  deleteSpecificImage,
 } = require('../Controller/PhotoController');
 
 // Configure multer for memory storage
@@ -48,5 +49,6 @@ router.put('/photo/:id', auth, (req, res, next) => {
   });
 }, updatePhoto);
 router.delete('/photo/:id', auth, deletePhoto);
+router.delete('/photo/:id/image', auth, deleteSpecificImage);
 
 module.exports = router;

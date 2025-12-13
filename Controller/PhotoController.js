@@ -125,3 +125,46 @@ exports.deletePhoto = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error deleting photo', error: error.message });
   }
 };
+
+// @desc Delete specific image from photo
+// @route DELETE /abhisekh/photo/:id/image
+// @access Private (requires auth)
+exports.deleteSpecificImage = async (req, res) => {
+  try {
+    // Check if admin is authenticated
+    if (!req.admin) {
+      return res.status(401).json({ success: false, message: 'Unauthorized: Admin authentication required' });
+    }
+
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return res.status(400).json({ success: false, message: 'Image URL is required' });
+    }
+
+    const photo = await Photo.findById(req.params.id);
+    if (!photo) return res.status(404).json({ success: false, message: 'Photo not found' });
+
+    // Check if image exists in the array
+    const imageIndex = photo.images.indexOf(imageUrl);
+    if (imageIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Image not found in photo' });
+    }
+
+    // Remove image from array
+    photo.images.splice(imageIndex, 1);
+
+    // Extract public_id from Cloudinary URL
+    const urlParts = imageUrl.split('/');
+    const publicIdWithExt = urlParts[urlParts.length - 1];
+    const publicId = `photo/${publicIdWithExt.split('.')[0]}`;
+
+    // Delete from Cloudinary
+    await cloudinary.uploader.destroy(publicId);
+
+    await photo.save();
+
+    res.status(200).json({ success: true, message: 'Image deleted successfully', data: photo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error deleting image', error: error.message });
+  }
+};
